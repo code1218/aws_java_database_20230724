@@ -25,11 +25,12 @@ import javax.swing.DefaultComboBoxModel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class ProductRegisterFrame extends JFrame {
+public class ProductModifyFrame extends JFrame {
 
 	private JPanel contentPane;
 	private JTextField productNameTextField;
 	private JTextField productPriceTextField;
+	private JTextField productIdTextField;
 
 	/**
 	 * Launch the application.
@@ -38,7 +39,7 @@ public class ProductRegisterFrame extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ProductRegisterFrame frame = new ProductRegisterFrame();
+					ProductModifyFrame frame = new ProductModifyFrame(1);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -50,58 +51,68 @@ public class ProductRegisterFrame extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public ProductRegisterFrame() {
+	public ProductModifyFrame(int productId) {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 450, 338);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		JLabel titleLabel = new JLabel("상품 등록");
+		JLabel titleLabel = new JLabel("상품 수정");
 		titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		titleLabel.setBounds(12, 10, 410, 51);
 		contentPane.add(titleLabel);
 		
+		JLabel productIdLabel = new JLabel("상품번호");
+		productIdLabel.setBounds(12, 77, 57, 15);
+		contentPane.add(productIdLabel);
+		
+		productIdTextField = new JTextField();
+		productIdTextField.setColumns(10);
+		productIdTextField.setBounds(81, 71, 341, 27);
+		productIdTextField.setEnabled(false);
+		contentPane.add(productIdTextField);
+		
 		JLabel productNameLabel = new JLabel("상품명");
-		productNameLabel.setBounds(12, 71, 57, 15);
+		productNameLabel.setBounds(12, 109, 57, 15);
 		contentPane.add(productNameLabel);
 		
 		productNameTextField = new JTextField();
-		productNameTextField.setBounds(81, 65, 341, 27);
+		productNameTextField.setBounds(81, 103, 341, 27);
 		contentPane.add(productNameTextField);
 		productNameTextField.setColumns(10);
 		
 		JLabel productPriceLabel = new JLabel("가격");
-		productPriceLabel.setBounds(12, 102, 57, 15);
+		productPriceLabel.setBounds(12, 140, 57, 15);
 		contentPane.add(productPriceLabel);
 		
 		productPriceTextField = new JTextField();
 		productPriceTextField.setColumns(10);
-		productPriceTextField.setBounds(81, 96, 341, 27);
+		productPriceTextField.setBounds(81, 134, 341, 27);
 		contentPane.add(productPriceTextField);
 		
 		JLabel productColorLabel = new JLabel("색상");
-		productColorLabel.setBounds(12, 133, 57, 15);
+		productColorLabel.setBounds(12, 171, 57, 15);
 		contentPane.add(productColorLabel);
 		
 		JComboBox colorComboBox = new JComboBox();
 		CustomSwingComboBoxUtil.setComboBoxModel(colorComboBox, ProductColorService.getInstance().getProductColorNameList());
-		colorComboBox.setBounds(81, 127, 341, 27);
+		colorComboBox.setBounds(81, 165, 341, 27);
 		contentPane.add(colorComboBox);
 		
 		JLabel productCategoryLabel = new JLabel("카테고리");
-		productCategoryLabel.setBounds(12, 164, 57, 15);
+		productCategoryLabel.setBounds(12, 202, 57, 15);
 		contentPane.add(productCategoryLabel);
 		
 		JComboBox categoryComboBox = new JComboBox();
 		CustomSwingComboBoxUtil.setComboBoxModel(categoryComboBox, ProductCategoryService.getInstance().getProductCategoryNameList());
-		categoryComboBox.setBounds(81, 160, 341, 27);
+		categoryComboBox.setBounds(81, 198, 341, 27);
 		contentPane.add(categoryComboBox);
 		
-		JButton registerSubmitButton = new JButton("등록하기");
-		registerSubmitButton.addMouseListener(new MouseAdapter() {
+		JButton modifySubmitButton = new JButton("수정하기");
+		modifySubmitButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				String productName = productNameTextField.getText();
@@ -122,26 +133,44 @@ public class ProductRegisterFrame extends JFrame {
 				}
 				
 				Product product = Product.builder()
+						.productId(productId)
 						.productName(productName)
 						.productPrice(Integer.parseInt(productPrice))
 						.productColor(ProductColor.builder().productColorName(productColorName).build())
 						.productCategory(ProductCategory.builder().productCategoryName(productCategoryName).build())
 						.build();
 				
-				if(!ProductService.getInstance().registerProduct(product)) {
-					JOptionPane.showMessageDialog(contentPane, "상품등록 중 오류가 발생하였습니다.", "등록오류", JOptionPane.ERROR_MESSAGE);
+				if(!ProductService.getInstance().modifyProduct(product)) {
+					JOptionPane.showMessageDialog(contentPane, "상품수정 중 오류가 발생하였습니다.", "수정오류", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				
-				JOptionPane.showMessageDialog(contentPane, "새로운 상품을 등록하였습니다.", "등록성공", JOptionPane.PLAIN_MESSAGE);
-				CustomSwingTextUtil.clearTextField(productNameTextField);
-				CustomSwingTextUtil.clearTextField(productPriceTextField);
-				colorComboBox.setSelectedIndex(0);
-				categoryComboBox.setSelectedIndex(0);
+				JOptionPane.showMessageDialog(contentPane, "상품을 수정하였습니다.", "수정성공", JOptionPane.PLAIN_MESSAGE);
+				ProductSearchFrame.getInstance().setSearchProductTableModel();
+				dispose();
 			}
 		});
-		registerSubmitButton.setBounds(12, 195, 410, 56);
-		contentPane.add(registerSubmitButton);
+		modifySubmitButton.setBounds(12, 233, 410, 56);
+		contentPane.add(modifySubmitButton);
+		
+		Product product = ProductService.getInstance().getProductByProductId(productId);
+		
+		if(product != null) {
+			productIdTextField.setText(Integer.toString(product.getProductId()));
+			productNameTextField.setText(product.getProductName());
+			productPriceTextField.setText(Integer.toString(product.getProductPrice()));
+			colorComboBox.setSelectedItem(product.getProductColor().getProductColorName());
+			categoryComboBox.setSelectedItem(product.getProductCategory().getProductCategoryName());			
+		}
+		
 		
 	}
 }
+
+
+
+
+
+
+
+
